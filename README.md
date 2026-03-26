@@ -153,6 +153,25 @@ The discrepancy model achieves the best accuracy with the smallest network. Here
 **Input choice matters.** Using Keplerian state as input (rather than time) makes the correction physically meaningful — it ties the network's output to *where* in the orbit Earth is, not just *when*, which is more robust and interpretable.
  
 **Numerical stability is non-trivial.** Second-differencing positions to recover accelerations amplifies noise by ~1/dt² ≈ 10⁵. Learning position residuals directly, rather than acceleration residuals, was critical to obtaining clean training signal.
+
+---
+## Why This Matters — Practical Applications
+ 
+Earth's orbit is a proof of concept. NASA already knows where Earth is. The real value of this methodology is the general recipe it demonstrates:
+ 
+> *Take any system where you have an approximate physics model and real measurements. Run the physics first. Learn the residual. Get better predictions than either approach alone — with less data and a smaller model.*
+ 
+This recipe applies across many real engineering and scientific domains.
+ 
+**Discovering unknown physics from the residual.** The discrepancy isn't just noise to be minimised but it's also a signal. If the learned residual has interpretable structure, it tells you what your physics model is missing. In this project, the discrepancy subplots show a clear sinusoidal pattern driven by planetary perturbations. Fourier-analysing that signal could identify which planets are responsible, by matching frequencies and amplitudes to known orbital periods. This is not hypothetical: Neptune was discovered in 1846 precisely because Uranus had an unexplained orbital residual, and someone asked what mass at what distance would produce exactly that discrepancy.
+ 
+**Reducing data requirements.** A pure neural network needs enough data to learn the full dynamics from scratch. The discrepancy model only needs enough data to train the small correction network — because the physics model already handles the dominant behaviour. In practice this means you can get good results from weeks of observations rather than years, which matters enormously when data collection is expensive, slow, or dangerous.
+ 
+**Extrapolation beyond the training window.** The Kepler model extrapolates indefinitely with no additional data — it's a physics solver, not a curve fit. The correction network's extrapolation depends on whether the residual structure it learned stays consistent over time. For periodic systems like orbits, this is plausible. For slowly drifting systems, the residual itself can be monitored for change, which leads to the next application.
+ 
+**Anomaly detection and fault monitoring.** Once trained on nominal behaviour, a sudden shift in the residual magnitude or structure signals that something in the real system has changed in a way the physics model doesn't account for. This is directly applicable to spacecraft telemetry (thruster degradation, unexpected drag), industrial machinery (bearing wear, seal failure), or any engineered system where the physics is well-understood but the real-world deviations need monitoring.
+ 
+**Broader applicability.** The same approach works in any domain with imperfect physics models: satellite attitude control with flexible appendages, robot arm dynamics with joint friction and cable flex, climate models where large-scale physics is known but turbulence is not, or biomedical systems where compartment models approximate but don't fully capture real physiology. In all these cases, the methodology is the same — use the physics to reduce the problem, use data to correct what remains.
  
 ---
  
