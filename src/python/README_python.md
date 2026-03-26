@@ -182,7 +182,7 @@ Physics weights start at 0 and ramp up linearly. The idea: let the network build
 ## The PINN Failure — What the Figure Shows
 
 <p align="center">
-  <img src="fig/pinnpy.png" alt="PINN failure" width="850"/>
+  <img src="fig/pinnpy.png" alt="PINN failure" width="800"/>
 </p>
 
 **Orbit plot (left):** The predicted trajectory visibly diverges from the data — RMSE = 3.86e-02 AU, which is an order of magnitude *worse* than the pure Kepler model (3.34e-03 AU). Adding physics made the result worse.
