@@ -2,15 +2,15 @@
 
 **Can a small neural network, guided by physics, outperform either physics or data alone?**
 
-This project answers that question by modelling Earth's orbit using NASA ephemeris data — progressing through three increasingly principled approaches, each building on the limitations of the last.
+This project answers that question by modelling Earth's orbit using NASA ephemeris data, progressing through three increasingly principled approaches, each building on the limitations of the last.
 
 ---
 
 ## Background & Motivation
 
-This work was developed as part of my research for Master's thesis at Budapest University of Technology and Economics (BME-VIK), under the theme of *combining model-based signal processing with AI methods*. The core question is: **how do you most effectively integrate domain knowledge with data-driven learning?**
+This work was developed as research part of my Master's thesis at Budapest University of Technology and Economics (BME-VIK), under the theme of *combining model-based signal processing with AI methods*. The core question is: **how do you most effectively integrate domain knowledge with data-driven learning?**
 
-Earth's orbit is an ideal test case. The physics is well-understood (Newtonian gravity), but a real-world trajectory from NASA contains perturbations from other planets, the Moon, and solar oblateness, things a pure physics model quietly gets wrong. The challenge is to handle that gap intelligently.
+Earth's orbit is an ideal test case. The physics is well-understood (Newtonian gravity), but a real-world trajectory from NASA contains perturbations from other planets, the Moon, solar oblateness, etc.: things a pure physics model quietly gets wrong. The challenge is to handle that gap intelligently.
 
 The project started in Python for early experimentation, then moved entirely to MATLAB for the physics simulations, neural network training, and final results.
 
@@ -44,6 +44,16 @@ Training uses MSE on normalized positions, optimized with Adam (lr = 1e-3, 2000 
 
 **What it reveals:** The network fits the training data well but is entirely unconstrained — it has no concept of gravity, periodicity, or conservation laws. It treats orbital mechanics as an arbitrary curve-fitting problem. This is the baseline that motivates everything that follows.
 
+<p align="center">
+  <img src="figs/YOUR_NN_ORBIT_FIGURE.png" alt="Pure NN full orbit" width="700"/>
+</p>
+<p align="center"><em>Full orbit: NASA data vs pure NN prediction. The fit looks reasonable at a glance but breaks down at the boundaries.</em></p>
+
+<p align="center">
+  <img src="figs/YOUR_NN_DIVERGENCE_FIGURE.png" alt="Pure NN endpoint divergence" width="700"/>
+</p>
+<p align="center"><em>Zoomed view at the orbit endpoints. The predicted trajectory diverges sharply — shooting outward tangentially instead of closing the orbit. This is endpoint divergence: the network maps t ∈ [0,1] to position with no knowledge that the orbit is periodic, i.e. that t = 0 and t = 1 must be the same point in space. At the boundaries, the network only has neighbours on one side, so it extrapolates along the local tangent of the orbit rather than curving back to close it. This is a direct consequence of having no physics — the network simply does not know orbits are closed.</em></p>
+
 ---
 
 ### Stage 2 — Physics-Informed Neural Network (`pinn_earth_2.m`, `PINN_earth_2324.m`)
@@ -61,6 +71,18 @@ Loss = L_data  +  λ₁ · L_Newton  +  λ₂ · L_AngularMomentum
 A key design detail: the physics weights **λ₁ and λ₂ are ramped up linearly** between epochs 2000–3500. Starting with λ = 0 lets the network first build a reasonable data fit; only then are the physics constraints gradually tightened. Without this, the physics loss destabilises early training.
 
 **What it reveals:** Physics constraints improve trajectory smoothness and orbital shape. But asking one network to simultaneously fit data, satisfy ODEs, and conserve quantities means competing objectives that are difficult to balance and sensitive to the weight schedule.
+
+**Why physics losses fail here:** The Newton residual operates on a scale of ~10²–10³ while DataLoss is ~10⁻⁴ — a difference of six orders of magnitude. Even a small λ causes the physics gradient to overwhelm the data signal. More fundamentally, the physics loss enforces pure two-body Newtonian gravity, but the NASA data includes perturbations from other planets and the Moon — so the network is simultaneously penalised for correctly fitting the data. This tension cannot be resolved with a soft penalty.
+
+<p align="center">
+  <img src="figs/YOUR_PINN_ORBIT_FIGURE.png" alt="PINN full orbit" width="700"/>
+</p>
+<p align="center"><em>Full orbit: NASA data vs PINN prediction. The physics constraints are present in the loss function but the same endpoint divergence persists — soft penalties cannot enforce periodicity or orbital closure.</em></p>
+
+<p align="center">
+  <img src="figs/YOUR_PINN_DIVERGENCE_FIGURE.png" alt="PINN endpoint divergence" width="700"/>
+</p>
+<p align="center"><em>Zoomed view at the orbit endpoints. The endpoint divergence is still visible, showing that adding physics as a soft loss term is not sufficient to fix the structural limitation of mapping time → position without any notion of periodicity. The network still treats the orbit as an open curve.</em></p>
 
 ---
 
@@ -91,15 +113,10 @@ The input is the Keplerian **state**, not time. This means the correction depend
 
 **Step 4 — Final prediction.** `x_full = x_Kepler + D(state_Kepler)`
 
+![Discrepancy Modelling Results](figs/Discrepancy_Modelling.png)
+*Top: full orbit comparison (NASA data vs Kepler baseline vs Kepler + D hybrid). Bottom: X and Y position discrepancies — true residual vs learned correction.*
+
 **Why this works better:** Kepler already explains ~99.9% of the variance. The neural network only needs to learn a small, structured residual — a far easier task. The physics model handles the dominant dynamics; the network fills in precisely what physics alone cannot capture. The result is a smaller network (4→32→32→2 vs 1→60→60→2), faster training, and better RMSE.
-
-<p align="center">
-  <img src="fig/Discrepancy Modelling.png" alt="Discrepancy Modelling Results" width="800"/>
-</p>
-
-<p align="center">
-  <img src="fig/DMZoom.png" alt="Discrepancy Modelling Results - Magnified" width="800"/>
-</p>
 
 ---
 
