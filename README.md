@@ -116,11 +116,16 @@ The input is the Keplerian **state**, not time. This means the correction depend
 <p align="center">
   <img src="fig/Discrepancy Modelling.png" alt="PINN full orbit" width="700"/>
 </p>
-<p align="center"><em>Top: full orbit comparison (NASA data vs Kepler baseline vs Kepler + D hybrid). Bottom: X and Y position discrepancies — true residual vs learned correction.</em></p>
+<p align="center"><em>Full orbit comparison. At this scale all three curves: NASA data, Kepler baseline, and the hybrid model — are nearly indistinguishable, which itself shows how dominant the Keplerian physics is. The RMSE tells the real story: Kepler achieves 3.34×10⁻³ AU, the hybrid achieves 1.72×10⁻⁴ AU — a ~19× improvement. The bottom panels show the learned discrepancy (red dashed) tracking the true residual (blue) over the full year, with the sinusoidal structure of planetary perturbations clearly captured.</em></p>
 
 <p align="center">
   <img src="fig/DMZoom.png" alt="PINN full orbit" width="700"/>
 </p>
+
+<p align="center">
+  <img src="fig/DMMag.png" alt="PINN full orbit" width="700"/>
+</p>
+<p align="center"><em>Magnified view of the orbit's upper arc, where the separation between Kepler (green) and the hybrid (red) becomes visible. The hybrid closely follows the NASA data points while Kepler drifts slightly. The discrepancy subplots show a transient spike at t≈0 where the D block overshoots the initial correction — a boundary effect from the state-based input having no prior context at the start of the trajectory. Beyond this, the learned correction tracks the true residual tightly throughout the orbit.</em></p>
 
 **Why this works better:** Kepler already explains ~99.9% of the variance. The neural network only needs to learn a small, structured residual — a far easier task. The physics model handles the dominant dynamics; the network fills in precisely what physics alone cannot capture. The result is a smaller network (4→32→32→2 vs 1→60→60→2), faster training, and better RMSE.
 
