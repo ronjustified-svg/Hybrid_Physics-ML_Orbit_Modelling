@@ -45,14 +45,14 @@ Training uses MSE on normalized positions, optimized with Adam (lr = 1e-3, 2000 
 **What it reveals:** The network fits the training data well but is entirely unconstrained — it has no concept of gravity, periodicity, or conservation laws. It treats orbital mechanics as an arbitrary curve-fitting problem. This is the baseline that motivates everything that follows.
 
 <p align="center">
-  <img src="figs/YOUR_NN_ORBIT_FIGURE.png" alt="Pure NN full orbit" width="700"/>
+  <img src="fig/NN_earth_2324_baselineNN.png" alt="Pure NN full orbit" width="700"/>
 </p>
 <p align="center"><em>Full orbit: NASA data vs pure NN prediction. The fit looks reasonable at a glance but breaks down at the boundaries.</em></p>
 
 <p align="center">
-  <img src="figs/YOUR_NN_DIVERGENCE_FIGURE.png" alt="Pure NN endpoint divergence" width="700"/>
+  <img src="fig/NN_earth_2324_BaselineMagnif.png" alt="Pure NN endpoint divergence" width="700"/>
 </p>
-<p align="center"><em>Zoomed view at the orbit endpoints. The predicted trajectory diverges sharply — shooting outward tangentially instead of closing the orbit. This is endpoint divergence: the network maps t ∈ [0,1] to position with no knowledge that the orbit is periodic, i.e. that t = 0 and t = 1 must be the same point in space. At the boundaries, the network only has neighbours on one side, so it extrapolates along the local tangent of the orbit rather than curving back to close it. This is a direct consequence of having no physics — the network simply does not know orbits are closed.</em></p>
+<p align="center"><em>Zoomed view at the orbit endpoints. The predicted trajectory diverges sharply — shooting outward tangentially instead of closing the orbit. This is endpoint divergence: the network maps t ∈ [0,1] to position with no knowledge that the orbit is periodic, i.e. that t = 0 and t = 1 must be the same point in space. At the boundaries, the network only has neighbours on one side, so it extrapolates along the local tangent of the orbit rather than curving back to close it.</em></p>
 
 ---
 
@@ -75,12 +75,12 @@ A key design detail: the physics weights **λ₁ and λ₂ are ramped up linearl
 **Why physics losses fail here:** The Newton residual operates on a scale of ~10²–10³ while DataLoss is ~10⁻⁴ — a difference of six orders of magnitude. Even a small λ causes the physics gradient to overwhelm the data signal. More fundamentally, the physics loss enforces pure two-body Newtonian gravity, but the NASA data includes perturbations from other planets and the Moon — so the network is simultaneously penalised for correctly fitting the data. This tension cannot be resolved with a soft penalty.
 
 <p align="center">
-  <img src="figs/YOUR_PINN_ORBIT_FIGURE.png" alt="PINN full orbit" width="700"/>
+  <img src="fig/PINN_earth_orbit.png" alt="PINN full orbit" width="700"/>
 </p>
 <p align="center"><em>Full orbit: NASA data vs PINN prediction. The physics constraints are present in the loss function but the same endpoint divergence persists — soft penalties cannot enforce periodicity or orbital closure.</em></p>
 
 <p align="center">
-  <img src="figs/YOUR_PINN_DIVERGENCE_FIGURE.png" alt="PINN endpoint divergence" width="700"/>
+  <img src="fig/PINN_Earth_Mag.png" alt="PINN endpoint divergence" width="700"/>
 </p>
 <p align="center"><em>Zoomed view at the orbit endpoints. The endpoint divergence is still visible, showing that adding physics as a soft loss term is not sufficient to fix the structural limitation of mapping time → position without any notion of periodicity. The network still treats the orbit as an open curve.</em></p>
 
@@ -113,8 +113,14 @@ The input is the Keplerian **state**, not time. This means the correction depend
 
 **Step 4 — Final prediction.** `x_full = x_Kepler + D(state_Kepler)`
 
-![Discrepancy Modelling Results](figs/Discrepancy_Modelling.png)
-*Top: full orbit comparison (NASA data vs Kepler baseline vs Kepler + D hybrid). Bottom: X and Y position discrepancies — true residual vs learned correction.*
+<p align="center">
+  <img src="fig/Discrepancy Modelling.png" alt="PINN full orbit" width="700"/>
+</p>
+<p align="center"><em>Top: full orbit comparison (NASA data vs Kepler baseline vs Kepler + D hybrid). Bottom: X and Y position discrepancies — true residual vs learned correction.</em></p>
+
+<p align="center">
+  <img src="fig/DMZoom.png" alt="PINN full orbit" width="700"/>
+</p>
 
 **Why this works better:** Kepler already explains ~99.9% of the variance. The neural network only needs to learn a small, structured residual — a far easier task. The physics model handles the dominant dynamics; the network fills in precisely what physics alone cannot capture. The result is a smaller network (4→32→32→2 vs 1→60→60→2), faster training, and better RMSE.
 
