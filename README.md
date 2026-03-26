@@ -132,52 +132,53 @@ The input is the Keplerian **state**, not time. This means the correction depend
 ---
 
 ## Results Summary
-
-| Model | Input | Network | Physics | RMSE |
+ 
+| Model | Input | Network | Physics role | RMSE |
 |---|---|---|---|---|
-| Pure NN | time | 1→60→60→2 | none | baseline |
-| PINN | time | 1→60→60→2 | Newton + Ang. mom. (soft penalty) | improved |
-| **Discrepancy Model** | **Kepler state** | **4→32→32→2** | **Kepler ODE (hard constraint)** | **best** |
-
-The discrepancy model achieves the best accuracy with the smallest network — demonstrating that embedding physics as a hard structural constraint (an ODE solver) is more powerful than encoding it as a soft loss penalty.
-
+| Pure NN | time | 1→60→60→2 | none | 8.11×10⁻³ AU |
+| PINN | time | 1→60→60→2 | soft penalty in loss (Newton + Ang. mom.) | — |
+| Kepler only | — | none | two-body ODE solver | 3.34×10⁻³ AU |
+| **Discrepancy Model** | **Kepler state** | **4→32→32→2** | **structural prior — Kepler runs first, NN corrects the residual** | **1.72×10⁻⁴ AU** |
+ 
+The discrepancy model achieves the best accuracy with the smallest network. Here the physics is not embedded *in* the network. The Kepler ODE runs as a separate upstream step and explains ~99.9% of the variance. The network only needs to learn the small residual that pure two-body physics misses. Using physics as a structural prior to reduce the learning problem is more effective than encoding it as a soft penalty inside the loss.
+ 
 ---
-
+ 
 ## Key Takeaways
-
-**Physics as structure beats physics as penalty.** The PINN encodes Newton's law as a loss term can still be violated. The discrepancy model encodes it as the actual ODE solver. Subject to this system hard constraints are more powerful when the physics is known and trusted.
-
+ 
+**Physics as a prior beats physics as a penalty.** The PINN tries to enforce Newton's law inside the loss function — a soft constraint that can be violated and that conflicts with the perturbed NASA data. The discrepancy model uses physics differently: the Kepler ODE runs first as a structural prior, explaining the dominant dynamics, and the network only corrects what's left. The network itself contains no physics at all.
+ 
 **Decompose the problem.** Asking one network to explain everything is harder than asking a physics model to explain most of it and a network to explain the rest. The residual is smaller, smoother, and easier to learn.
-
+ 
 **Input choice matters.** Using Keplerian state as input (rather than time) makes the correction physically meaningful — it ties the network's output to *where* in the orbit Earth is, not just *when*, which is more robust and interpretable.
-
+ 
 **Numerical stability is non-trivial.** Second-differencing positions to recover accelerations amplifies noise by ~1/dt² ≈ 10⁵. Learning position residuals directly, rather than acceleration residuals, was critical to obtaining clean training signal.
-
+ 
 ---
-
+ 
 ## Repo Structure
-
+ 
 ```
-├── NN_earth_2324.m       # Stage 1: Pure NN baseline (time → position)
-├── pinn_earth_2.m        # Stage 2a: PINN with physics monitoring, λ = 0
-├── PINN_earth_2324.m     # Stage 2b: PINN with adaptive physics loss ramp
-├── Dmodel.m              # Stage 3: Discrepancy model (Kepler + NN) ← main result
+├── NN_earth_2324.m       #  Pure NN baseline (time → position)
+├── pinn_earth_2.m        #  PINN with physics monitoring, λ = 0
+├── PINN_earth_2324.m     #  PINN with adaptive physics loss ramp
+├── Dmodel.m              #  Discrepancy model (Kepler + NN) ← main result
 ├── horizons_results.txt  # NASA Horizons ephemeris data (Earth, 2023–2024)
 └── README.md
 ```
-
+ 
 ---
-
+ 
 ## Requirements
-
+ 
 MATLAB R2022b or later with the **Deep Learning Toolbox** (for `dlnetwork`, `dlarray`, `dlfeval`, `adamupdate`, `dlgradient`).
-
+ 
 No additional toolboxes required. The Keplerian integration uses the built-in `ode45`.
-
+ 
 ---
-
+ 
 ## Running
-
+ 
 Ensure `horizons_results.txt` is in your working directory and run any script directly in MATLAB. Start with `Dmodel.m` for the main result.
-
+ 
 Diagnostic output (initial conditions check, Kepler RMSE sanity check, discrepancy statistics, final RMSE comparison) prints to the command window. Training progress appears in MATLAB's `trainingProgressMonitor`.
