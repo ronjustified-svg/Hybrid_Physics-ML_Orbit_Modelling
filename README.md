@@ -93,6 +93,10 @@ The input is the Keplerian **state**, not time. This means the correction depend
 
 **Why this works better:** Kepler already explains ~99.9% of the variance. The neural network only needs to learn a small, structured residual — a far easier task. The physics model handles the dominant dynamics; the network fills in precisely what physics alone cannot capture. The result is a smaller network (4→32→32→2 vs 1→60→60→2), faster training, and better RMSE.
 
+
+![Result](fig/Discrepancy Modelling.png)
+
+
 ---
 
 ## Results Summary
