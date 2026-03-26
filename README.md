@@ -145,7 +145,7 @@ The discrepancy model achieves the best accuracy with the smallest network — d
 
 ## Key Takeaways
 
-**Physics as structure beats physics as penalty.** The PINN encodes Newton's law as a loss term — it can still be violated. The discrepancy model encodes it as the actual ODE solver — it cannot. Hard constraints are more powerful when the physics is known and trusted.
+**Physics as structure beats physics as penalty.** The PINN encodes Newton's law as a loss term can still be violated. The discrepancy model encodes it as the actual ODE solver. Subject to this system hard constraints are more powerful when the physics is known and trusted.
 
 **Decompose the problem.** Asking one network to explain everything is harder than asking a physics model to explain most of it and a network to explain the rest. The residual is smaller, smoother, and easier to learn.
 
