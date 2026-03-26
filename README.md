@@ -97,6 +97,9 @@ The input is the Keplerian **state**, not time. This means the correction depend
   <img src="fig/Discrepancy Modelling.png" alt="Discrepancy Modelling Results" width="800"/>
 </p>
 
+<p align="center">
+  <img src="fig/DMZoom.png" alt="Discrepancy Modelling Results - Magnified" width="800"/>
+</p>
 
 ---
 
